@@ -29,7 +29,7 @@ npm install --save-dev swc-plugin-jsx-css-modules
           "prefer": "local",
           "styleFileReg": ["\.(css|scss|sass|less)$"]
         }]
-      }
+      ]
     }
   }
 }
