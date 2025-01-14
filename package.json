@@ -1,16 +1,21 @@
 {
   "name": "swc-plugin-jsx-css-modules",
-  "version": "0.0.0-beta.1",
+  "version": "0.0.0-beta.2",
   "description": "通过 SWC 实现 jsx 中无感知使用 cssModules",
   "main": "swc_plugin_jsx_css_modules.wasm",
+  "exports": {
+    ".": "./swc_plugin_jsx_css_modules.wasm",
+    "./helpers": "./helpers.js"
+  },
   "scripts": {
     "build": "cargo build --release --target wasm32-wasip1",
-    "postbuild": "node -e \"require('fs').copyFileSync('target/wasm32-wasip1/release/swc_plugin_jsx_css_modules.wasm', 'swc_plugin_jsx_css_modules.wasm')\"",
+    "postbuild": "node -e \"require('fs').copyFileSync('target/wasm32-wasip1/release/swc_plugin_jsx_css_modules.wasm', 'swc_plugin_jsx_css_modules.wasm')",
     "test": "cargo test",
     "prepublishOnly": "npm run build"
   },
   "files": [
     "swc_plugin_jsx_css_modules.wasm",
+    "helpers.js",
     "README.md",
     "LICENSE"
   ],

@@ -25,10 +25,13 @@ npm install --save-dev swc-plugin-jsx-css-modules
   "jsc": {
     "experimental": {
       "plugins": [
-        ["swc-plugin-jsx-css-modules", {
-          "prefer": "local",
-          "styleFileReg": ["\.(css|scss|sass|less)$"]
-        }]
+        [
+          "swc-plugin-jsx-css-modules",
+          {
+            "prefer": "local",
+            "styleFileReg": ["\\.(css|scss|sass|less)$"]
+          }
+        ]
       ]
     }
   }
@@ -38,10 +41,11 @@ npm install --save-dev swc-plugin-jsx-css-modules
 2. 在你的组件中使用 CSS 模块：
 
 ```jsx
-import './styles.css';  // 无需默认导入
+import "./styles.css"; // 无需默认导入
 
 const Component = () => (
-  <div className="container">  // 将被转换为使用 CSS 模块
+  <div className="container">
+    // 将被转换为使用 CSS 模块
     <span className="text">Hello</span>
   </div>
 );
@@ -71,11 +75,13 @@ const Component = () => (
 
 1. 克隆仓库
 2. 安装依赖：
+
 ```bash
 cargo build
 ```
 
 3. 运行测试：
+
 ```bash
 cargo test
 ```

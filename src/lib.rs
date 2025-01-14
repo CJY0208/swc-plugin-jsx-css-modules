@@ -1,6 +1,10 @@
-use swc_core::ecma::{
-    parser::{EsConfig, Syntax},
-    visit::{as_folder, Fold},
+use swc_core::{
+    ecma::{
+        ast::Program,
+        parser::{EsConfig, Syntax},
+        visit::{as_folder, FoldWith, Fold},
+    },
+    plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
 use serde::Deserialize;
 
@@ -24,8 +28,14 @@ fn default_style_file_reg() -> Vec<String> {
 mod visitor;
 use visitor::JsxCssModulesVisitor;
 
-pub fn jsx_css_modules(config: Config) -> impl Fold {
-    as_folder(JsxCssModulesVisitor::new(config))
+#[plugin_transform]
+pub fn transform_program(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
+    let config: Config = serde_json::from_str(&metadata.get_transform_plugin_config().unwrap_or_default()).unwrap_or_else(|_| Config {
+        prefer: default_prefer(),
+        style_file_reg: default_style_file_reg(),
+    });
+    let mut folder = as_folder(JsxCssModulesVisitor::new(config));
+    program.fold_with(&mut folder)
 }
 
 #[cfg(test)]
@@ -61,12 +71,12 @@ const Component = () => (
 "#,
         r#"
 import styles from './styles.css';
-import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
-const _styles = Object.assign({}, styles);
-const _matcher = getMatcher(_styles, 'local');
-const Component = () => <div className={_matcher("container")}>
-        <span className={_matcher("text")}>Hello</span>
-    </div>;
+
+const Component = () => (
+    <div className={styles.container}>
+        <span className={styles.text}>Hello</span>
+    </div>
+);
 "#
     );
 }
