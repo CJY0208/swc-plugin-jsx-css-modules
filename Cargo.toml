@@ -1,0 +1,24 @@
+[package]
+name = "swc-plugin-jsx-css-modules"
+version = "0.1.0"
+edition = "2021"
+description = "SWC plugin for using CSS Modules in JSX without explicit imports"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+swc_core = { version = "0.90.*", features = ["ecma_plugin_transform", "ecma_utils", "ecma_visit", "ecma_ast", "common", "__parser"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+regex = "1.5"
+
+[dev-dependencies]
+testing = "0.33.3"
+swc_ecma_parser = "0.141.26"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
