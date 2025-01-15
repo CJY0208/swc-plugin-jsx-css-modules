@@ -45,7 +45,7 @@ export default defineConfig({
 								experimental: {
 									plugins: [
 										['swc-plugin-jsx-css-modules', {
-											prefer: 'global',
+											prefer: 'local',
 											styleFileReg: ['\.module\.(css|scss|sass|less)$']
 										}]
 									]

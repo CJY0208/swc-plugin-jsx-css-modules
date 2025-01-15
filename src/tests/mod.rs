@@ -1,12 +1,30 @@
 use swc_core::ecma::{
-    parser::{EsConfig, Syntax},
+    ast::{self, *},
+    parser::{EsSyntax, Syntax},
     transforms::testing::test_inline,
+    visit::Fold,
 };
 use crate::{Config, visitor::JsxCssModulesVisitor};
-use swc_core::ecma::visit::{as_folder};
+
+struct AsFolder<T>(T);
+
+impl<T: Fold> ast::Pass for AsFolder<T> {
+    fn process(&mut self, program: &mut Program) {
+        match program {
+            Program::Module(module) => {
+                *module = self.0.fold_module(module.clone());
+            }
+            _ => {}
+        }
+    }
+}
+
+fn as_folder<T: Fold>(t: T) -> impl ast::Pass {
+    AsFolder(t)
+}
 
 fn syntax() -> Syntax {
-    Syntax::Es(EsConfig {
+    Syntax::Es(EsSyntax {
         jsx: true,
         ..Default::default()
     })
@@ -37,7 +55,7 @@ test_inline!(
         );
     "#,
     r#"
-        import style_0 from './styles.css';
+        import * as style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'local');
@@ -65,8 +83,8 @@ test_inline!(
         );
     "#,
     r#"
-        import style_0 from './style1.css';
-        import style_1 from './style2.scss';
+        import * as style_0 from './style1.css';
+        import * as style_1 from './style2.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0, style_1);
         const _matcher = getMatcher(_styles, 'local');
@@ -95,7 +113,7 @@ test_inline!(
         );
     "#,
     r#"
-        import style_0 from './styles.css';
+        import * as style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'local');
@@ -126,7 +144,7 @@ test_inline!(
         );
     "#,
     r#"
-        import style_0 from './styles.css';
+        import * as style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'global');
@@ -160,7 +178,7 @@ test_inline!(
     "#,
     r#"
         import './styles.css';
-        import style_0 from './foo.module.scss';
+        import * as style_0 from './foo.module.scss';
         import './bar.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
@@ -197,9 +215,9 @@ test_inline!(
     "#,
     r#"
         import './normal.css';
-        import style_0 from './foo.module.scss';
+        import * as style_0 from './foo.module.scss';
         import './normal.scss';
-        import style_1 from './bar.module.scss';
+        import * as style_1 from './bar.module.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0, style_1);
         const _matcher = getMatcher(_styles, 'global');
