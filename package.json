@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-jsx-css-modules",
-  "version": "0.0.0-beta.2",
+  "version": "0.0.0-beta.3",
   "description": "通过 SWC 实现 jsx 中无感知使用 cssModules",
   "main": "swc_plugin_jsx_css_modules.wasm",
   "exports": {

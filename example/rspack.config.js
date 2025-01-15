@@ -36,8 +36,8 @@ module.exports = {
               experimental: {
                 plugins: [
                   [path.resolve(__dirname, '../swc_plugin_jsx_css_modules.wasm'), {
-                    prefer: 'local',
-                    styleFileReg: ['\.(css|scss|sass|less)$']
+                    prefer: 'global',
+                    styleFileReg: ['\.module\.(css|scss|sass|less)$']
                   }]
                 ]
               }
@@ -46,7 +46,7 @@ module.exports = {
         }
       },
       {
-        test: /\.css$/,
+        test: /\.module\.css$/,
         type: "css/module"
       }
     ]

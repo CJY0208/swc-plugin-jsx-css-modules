@@ -1,8 +1,7 @@
 use swc_core::{
     ecma::{
         ast::Program,
-        parser::{EsConfig, Syntax},
-        visit::{as_folder, FoldWith, Fold},
+        visit::{as_folder, FoldWith},
     },
     plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
@@ -12,9 +11,9 @@ use serde::Deserialize;
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     #[serde(default = "default_prefer")]
-    prefer: String,
+    pub prefer: String,
     #[serde(default = "default_style_file_reg")]
-    style_file_reg: Vec<String>,
+    pub style_file_reg: Vec<String>,
 }
 
 fn default_prefer() -> String {
@@ -26,7 +25,10 @@ fn default_style_file_reg() -> Vec<String> {
 }
 
 mod visitor;
-use visitor::JsxCssModulesVisitor;
+pub use visitor::JsxCssModulesVisitor;
+
+#[cfg(test)]
+mod tests;
 
 #[plugin_transform]
 pub fn transform_program(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
@@ -36,47 +38,4 @@ pub fn transform_program(program: Program, metadata: TransformPluginProgramMetad
     });
     let mut folder = as_folder(JsxCssModulesVisitor::new(config));
     program.fold_with(&mut folder)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use swc_core::ecma::transforms::testing::test_inline;
-
-    fn syntax() -> Syntax {
-        Syntax::Es(EsConfig {
-            jsx: true,
-            ..Default::default()
-        })
-    }
-
-    test_inline!(
-        syntax(),
-        |_| {
-            let config = Config {
-                prefer: "local".to_string(),
-                style_file_reg: vec![r"\.(css|scss|sass|less)$".to_string()],
-            };
-            as_folder(JsxCssModulesVisitor::new(config))
-        },
-        basic_transform,
-        r#"
-import './styles.css';
-
-const Component = () => (
-    <div className="container">
-        <span className="text">Hello</span>
-    </div>
-);
-"#,
-        r#"
-import styles from './styles.css';
-
-const Component = () => (
-    <div className={styles.container}>
-        <span className={styles.text}>Hello</span>
-    </div>
-);
-"#
-    );
 }
