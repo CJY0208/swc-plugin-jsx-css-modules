@@ -1,8 +1,8 @@
 use swc_core::ecma::{
     ast::*,
-    visit::{VisitMut, VisitMutWith},
+    visit::{Fold, FoldWith},
 };
-use swc_core::common::Span;
+use swc_core::common::{Span, SyntaxContext};
 use regex::Regex;
 use super::Config;
 
@@ -36,6 +36,7 @@ impl JsxCssModulesVisitor {
         let matcher_ident = Ident::new(
             "_matcher".into(),
             Span::default(),
+            SyntaxContext::default(),
         );
         self.matcher_ident = Some(matcher_ident.clone());
 
@@ -54,6 +55,7 @@ impl JsxCssModulesVisitor {
                     callee: Callee::Expr(Box::new(Expr::Ident(Ident::new(
                         "getMatcher".into(),
                         Span::default(),
+                        SyntaxContext::default(),
                     )))),
                     args: vec![
                         ExprOrSpread {
@@ -70,15 +72,17 @@ impl JsxCssModulesVisitor {
                         },
                     ],
                     type_args: None,
+                    ctxt: SyntaxContext::default(),
                 }))),
                 definite: false,
             }],
+            ctxt: SyntaxContext::default(),
         })))
     }
 }
 
-impl VisitMut for JsxCssModulesVisitor {
-    fn visit_mut_module(&mut self, module: &mut Module) {
+impl Fold for JsxCssModulesVisitor {
+    fn fold_module(&mut self, mut module: Module) -> Module {
         // 收集样式导入
         let mut style_imports = Vec::new();
         let mut style_import_indices = Vec::new();
@@ -98,22 +102,16 @@ impl VisitMut for JsxCssModulesVisitor {
             let mut default_styles = Vec::new();
             let mut style_imports_map = std::collections::HashMap::new();
             for (i, import) in style_imports.iter_mut().enumerate() {
-                let has_default = import.specifiers.iter()
-                    .any(|s| matches!(s, ImportSpecifier::Default(_)));
-
-                if !has_default {
-                    let default_style = Ident::new(
-                        format!("style_{}", i).into(),
-                        Span::default(),
-                    );
-                    import.specifiers.push(ImportSpecifier::Default(ImportDefaultSpecifier {
-                        span: Span::default(),
-                        local: default_style.clone(),
-                    }));
-                    default_styles.push(default_style);
-                } else if let Some(ImportSpecifier::Default(spec)) = import.specifiers.first() {
-                    default_styles.push(spec.local.clone());
-                }
+                let default_style = Ident::new(
+                    format!("style_{}", i).into(),
+                    Span::default(),
+                    SyntaxContext::default(),
+                );
+                import.specifiers = vec![ImportSpecifier::Namespace(ImportStarAsSpecifier {
+                    span: Span::default(),
+                    local: default_style.clone(),
+                })];
+                default_styles.push(default_style);
                 style_imports_map.insert(import.src.value.to_string(), import.clone());
             }
 
@@ -130,14 +128,22 @@ impl VisitMut for JsxCssModulesVisitor {
                 phase: Default::default(),
                 specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
                     span: Span::default(),
-                    local: Ident::new("getMatcher".into(), Span::default()),
+                    local: Ident::new(
+                        "getMatcher".into(),
+                        Span::default(),
+                        SyntaxContext::default(),
+                    ),
                     imported: None,
                     is_type_only: false,
                 })],
             };
 
             // 创建 _styles 对象
-            let styles_ident = Ident::new("_styles".into(), Span::default());
+            let styles_ident = Ident::new(
+                "_styles".into(),
+                Span::default(),
+                SyntaxContext::default(),
+            );
             self.styles_ident = Some(styles_ident.clone());
             let styles_assign = VarDecl {
                 span: Span::default(),
@@ -156,8 +162,9 @@ impl VisitMut for JsxCssModulesVisitor {
                             obj: Box::new(Expr::Ident(Ident::new(
                                 "Object".into(),
                                 Span::default(),
+                                SyntaxContext::default(),
                             ))),
-                            prop: MemberProp::Ident(Ident::new(
+                            prop: MemberProp::Ident(IdentName::new(
                                 "assign".into(),
                                 Span::default(),
                             )),
@@ -173,9 +180,11 @@ impl VisitMut for JsxCssModulesVisitor {
                         })
                         .collect(),
                         type_args: None,
+                        ctxt: SyntaxContext::default(),
                     }))),
                     definite: false,
                 }],
+                ctxt: SyntaxContext::default(),
             };
 
             // 重新组织导入语句
@@ -209,10 +218,11 @@ impl VisitMut for JsxCssModulesVisitor {
             module.body = new_body;
         }
 
-        module.visit_mut_children_with(self);
+        // 递归处理子节点
+        module.fold_children_with(self)
     }
 
-    fn visit_mut_jsx_element(&mut self, jsx: &mut JSXElement) {
+    fn fold_jsx_element(&mut self, mut jsx: JSXElement) -> JSXElement {
         if let Some(matcher_ident) = &self.matcher_ident {
             for attr in &mut jsx.opening.attrs {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {
@@ -226,10 +236,15 @@ impl VisitMut for JsxCssModulesVisitor {
                                         callee: Callee::Expr(Box::new(Expr::Ident(matcher_ident.clone()))),
                                         args: vec![ExprOrSpread {
                                             spread: None,
-                                            expr: Box::new(Expr::Lit(Lit::Str(str_lit.clone()))),
+                                            expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                                span: Span::default(),
+                                                value: str_lit.value.clone().into(),
+                                                raw: None
+                                            })))
                                         }],
                                         type_args: None,
-                                    }))),
+                                        ctxt: SyntaxContext::default()
+                                    })))
                                 }));
                             }
                         }
@@ -238,6 +253,7 @@ impl VisitMut for JsxCssModulesVisitor {
             }
         }
 
-        jsx.visit_mut_children_with(self);
+        // 递归处理子节点
+        jsx.fold_children_with(self)
     }
 }

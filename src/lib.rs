@@ -1,7 +1,7 @@
 use swc_core::{
     ecma::{
-        ast::Program,
-        visit::{as_folder, FoldWith},
+        ast::*,
+        visit::{FoldWith},
     },
     plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
@@ -36,6 +36,6 @@ pub fn transform_program(program: Program, metadata: TransformPluginProgramMetad
         prefer: default_prefer(),
         style_file_reg: default_style_file_reg(),
     });
-    let mut folder = as_folder(JsxCssModulesVisitor::new(config));
+    let mut folder = JsxCssModulesVisitor::new(config);
     program.fold_with(&mut folder)
 }
