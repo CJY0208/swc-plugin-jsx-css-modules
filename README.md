@@ -29,7 +29,8 @@ npm install --save-dev swc-plugin-jsx-css-modules
           "swc-plugin-jsx-css-modules",
           {
             "prefer": "local",
-            "styleFileReg": ["\\.(css|scss|sass|less)$"]
+            "styleFileReg": ["\\.(css|scss|sass|less)$"],
+            "importStyle": "default"
           }
         ]
       ]
@@ -55,6 +56,9 @@ const Component = () => (
 
 - `prefer` (可选)：确定未指定类名是否应该被视为局部或全局。默认值："local"
 - `styleFileReg` (可选)：用于匹配样式文件的正则表达式数组。默认值：["\.(css|scss|sass|less)$"]
+- `importStyle` (可选)：指定样式导入的格式。可选值：
+  - `"default"`：使用默认导入 `import styles from './styles.css'`（默认值）
+  - `"namespace"`：使用命名空间导入 `import * as styles from './styles.css'`
 
 ## 特殊语法
 
