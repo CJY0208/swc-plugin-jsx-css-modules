@@ -1,5 +1,5 @@
-import React from 'react';
-import './App.module.css';
+import React from 'react'
+import './App.module.css'
 
 function App() {
   return (
@@ -10,7 +10,7 @@ function App() {
         <p className="card-text">This is a card with mixed local and global styles</p>
       </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

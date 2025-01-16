@@ -107,10 +107,17 @@ impl Fold for JsxCssModulesVisitor {
                     Span::default(),
                     SyntaxContext::default(),
                 );
-                import.specifiers = vec![ImportSpecifier::Namespace(ImportStarAsSpecifier {
-                    span: Span::default(),
-                    local: default_style.clone(),
-                })];
+                import.specifiers = vec![if self.config.import_style == "namespace" {
+                    ImportSpecifier::Namespace(ImportStarAsSpecifier {
+                        span: Span::default(),
+                        local: default_style.clone(),
+                    })
+                } else {
+                    ImportSpecifier::Default(ImportDefaultSpecifier {
+                        span: Span::default(),
+                        local: default_style.clone(),
+                    })
+                }];
                 default_styles.push(default_style);
                 style_imports_map.insert(import.src.value.to_string(), import.clone());
             }

@@ -34,6 +34,7 @@ fn get_config() -> Config {
     Config {
         prefer: "local".to_string(),
         style_file_reg: vec![r"\.(css|scss|sass|less)$".to_string()],
+        import_style: "default".to_string(),
     }
 }
 
@@ -55,7 +56,7 @@ test_inline!(
         );
     "#,
     r#"
-        import * as style_0 from './styles.css';
+        import style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'local');
@@ -83,8 +84,8 @@ test_inline!(
         );
     "#,
     r#"
-        import * as style_0 from './style1.css';
-        import * as style_1 from './style2.scss';
+        import style_0 from './style1.css';
+        import style_1 from './style2.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0, style_1);
         const _matcher = getMatcher(_styles, 'local');
@@ -113,7 +114,7 @@ test_inline!(
         );
     "#,
     r#"
-        import * as style_0 from './styles.css';
+        import style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'local');
@@ -131,6 +132,7 @@ test_inline!(
         let config = Config {
             prefer: "global".to_string(),
             style_file_reg: vec![r"\.(css|scss|sass|less)$".to_string()],
+            import_style: "default".to_string(),
         };
         as_folder(JsxCssModulesVisitor::new(config))
     },
@@ -144,7 +146,7 @@ test_inline!(
         );
     "#,
     r#"
-        import * as style_0 from './styles.css';
+        import style_0 from './styles.css';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
         const _matcher = getMatcher(_styles, 'global');
@@ -162,6 +164,7 @@ test_inline!(
         let config = Config {
             prefer: "local".to_string(),
             style_file_reg: vec![r"\.module\.scss$".to_string()],
+            import_style: "default".to_string(),
         };
         as_folder(JsxCssModulesVisitor::new(config))
     },
@@ -178,7 +181,7 @@ test_inline!(
     "#,
     r#"
         import './styles.css';
-        import * as style_0 from './foo.module.scss';
+        import style_0 from './foo.module.scss';
         import './bar.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0);
@@ -197,6 +200,7 @@ test_inline!(
         let config = Config {
             prefer: "global".to_string(),
             style_file_reg: vec![r"\.module\.scss$".to_string()],
+            import_style: "default".to_string(),
         };
         as_folder(JsxCssModulesVisitor::new(config))
     },
@@ -215,9 +219,9 @@ test_inline!(
     "#,
     r#"
         import './normal.css';
-        import * as style_0 from './foo.module.scss';
+        import style_0 from './foo.module.scss';
         import './normal.scss';
-        import * as style_1 from './bar.module.scss';
+        import style_1 from './bar.module.scss';
         import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
         const _styles = Object.assign({}, style_0, style_1);
         const _matcher = getMatcher(_styles, 'global');
@@ -226,5 +230,65 @@ test_inline!(
                 <span className={_matcher("text :global(highlight)")}>Hello</span>
                 <button className={_matcher(":local(button) primary")}>Click me</button>
             </div>;
+    "#
+);
+
+// Test namespace import style (import style_X)
+test_inline!(
+    syntax(),
+    |_| {
+        let config = Config {
+            prefer: "local".to_string(),
+            style_file_reg: vec![r"\.(css|scss|sass|less)$".to_string()],
+            import_style: "namespace".to_string(),
+        };
+        as_folder(JsxCssModulesVisitor::new(config))
+    },
+    test_namespace_import_style,
+    r#"
+        import './styles.css';
+
+        const Component = () => (
+            <div className="container">Hello</div>
+        );
+    "#,
+    r#"
+        import * as style_0 from './styles.css';
+        import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
+
+        const _styles = Object.assign({}, style_0);
+        const _matcher = getMatcher(_styles, 'local');
+        const Component = () => 
+            <div className={_matcher("container")}>Hello</div>;
+    "#
+);
+
+// Test default import style (import style_X)
+test_inline!(
+    syntax(),
+    |_| {
+        let config = Config {
+            prefer: "local".to_string(),
+            style_file_reg: vec![r"\.(css|scss|sass|less)$".to_string()],
+            import_style: "default".to_string(),
+        };
+        as_folder(JsxCssModulesVisitor::new(config))
+    },
+    test_default_import_style,
+    r#"
+        import './styles.css';
+
+        const Component = () => (
+            <div className="container">Hello</div>
+        );
+    "#,
+    r#"
+        import style_0 from './styles.css';
+        import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
+
+        const _styles = Object.assign({}, style_0);
+        const _matcher = getMatcher(_styles, 'local');
+        const Component = () => 
+            <div className={_matcher("container")}>Hello</div>;
     "#
 );
