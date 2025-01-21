@@ -235,24 +235,46 @@ impl Fold for JsxCssModulesVisitor {
                 if let JSXAttrOrSpread::JSXAttr(attr) = attr {
                     if let JSXAttrName::Ident(ident) = &attr.name {
                         if ident.sym == *"className" {
-                            if let Some(JSXAttrValue::Lit(Lit::Str(str_lit))) = &attr.value {
-                                attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                                    span: Span::default(),
-                                    expr: JSXExpr::Expr(Box::new(Expr::Call(CallExpr {
+                            match &attr.value {
+                                // 处理字符串字面量
+                                Some(JSXAttrValue::Lit(Lit::Str(str_lit))) => {
+                                    attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
                                         span: Span::default(),
-                                        callee: Callee::Expr(Box::new(Expr::Ident(matcher_ident.clone()))),
-                                        args: vec![ExprOrSpread {
-                                            spread: None,
-                                            expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                        expr: JSXExpr::Expr(Box::new(Expr::Call(CallExpr {
+                                            span: Span::default(),
+                                            callee: Callee::Expr(Box::new(Expr::Ident(matcher_ident.clone()))),
+                                            args: vec![ExprOrSpread {
+                                                spread: None,
+                                                expr: Box::new(Expr::Lit(Lit::Str(Str {
+                                                    span: Span::default(),
+                                                    value: str_lit.value.clone().into(),
+                                                    raw: None
+                                                })))
+                                            }],
+                                            type_args: None,
+                                            ctxt: SyntaxContext::default()
+                                        })))
+                                    }));
+                                },
+                                // 处理 JSX 表达式容器（模板字符串和函数调用）
+                                Some(JSXAttrValue::JSXExprContainer(container)) => {
+                                    if let JSXExpr::Expr(expr) = &container.expr {
+                                        attr.value = Some(JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                                            span: Span::default(),
+                                            expr: JSXExpr::Expr(Box::new(Expr::Call(CallExpr {
                                                 span: Span::default(),
-                                                value: str_lit.value.clone().into(),
-                                                raw: None
+                                                callee: Callee::Expr(Box::new(Expr::Ident(matcher_ident.clone()))),
+                                                args: vec![ExprOrSpread {
+                                                    spread: None,
+                                                    expr: expr.clone()
+                                                }],
+                                                type_args: None,
+                                                ctxt: SyntaxContext::default()
                                             })))
-                                        }],
-                                        type_args: None,
-                                        ctxt: SyntaxContext::default()
-                                    })))
-                                }));
+                                        }));
+                                    }
+                                },
+                                _ => {}
                             }
                         }
                     }
@@ -260,7 +282,7 @@ impl Fold for JsxCssModulesVisitor {
             }
         }
 
-        // 递归处理子节点
-        jsx.fold_children_with(self)
+        jsx.children = jsx.children.fold_with(self);
+        jsx
     }
 }

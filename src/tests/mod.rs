@@ -292,3 +292,73 @@ test_inline!(
             <div className={_matcher("container")}>Hello</div>;
     "#
 );
+
+// test_template_string_classes
+test_inline!(
+    syntax(),
+    |_| {
+        let config = Config {
+            prefer: "local".to_string(),
+            style_file_reg: vec![r"\.css$".to_string(), r"\.scss$".to_string()],
+            import_style: "default".to_string(),
+        };
+        as_folder(JsxCssModulesVisitor::new(config))
+    },
+    test_template_string_classes,
+    r#"
+        import style1 from './style1.css';
+        import style2 from './style2.scss';
+
+        const Component = () => (
+            <div className={`container ${someCondition ? 'active' : ''} wrapper`}>
+                <span className={`text bold`}>Hello</span>
+            </div>
+        );
+    "#,
+    r#"
+        import style_0 from './style1.css';
+        import style_1 from './style2.scss';
+        import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
+        const _styles = Object.assign({}, style_0, style_1);
+        const _matcher = getMatcher(_styles, 'local');
+        const Component = () => 
+            <div className={_matcher(`container ${someCondition ? 'active' : ''} wrapper`)}>
+                <span className={_matcher(`text bold`)}>Hello</span>
+            </div>;
+    "#
+);
+
+// test_classnames_function
+test_inline!(
+    syntax(),
+    |_| {
+        let config = Config {
+            prefer: "local".to_string(),
+            style_file_reg: vec![r"\.css$".to_string(), r"\.scss$".to_string()],
+            import_style: "default".to_string(),
+        };
+        as_folder(JsxCssModulesVisitor::new(config))
+    },
+    test_classnames_function,
+    r#"
+        import style1 from './style1.css';
+        import style2 from './style2.scss';
+
+        const Component = () => (
+            <div className={classnames('container', 'wrapper', {'active': isActive})}>
+                <span className={classnames('text', 'bold')}>Hello</span>
+            </div>
+        );
+    "#,
+    r#"
+        import style_0 from './style1.css';
+        import style_1 from './style2.scss';
+        import { getMatcher } from 'swc-plugin-jsx-css-modules/helpers';
+        const _styles = Object.assign({}, style_0, style_1);
+        const _matcher = getMatcher(_styles, 'local');
+        const Component = () => 
+            <div className={_matcher(classnames('container', 'wrapper', {'active': isActive}))}>
+                <span className={_matcher(classnames('text', 'bold'))}>Hello</span>
+            </div>;
+    "#
+);
